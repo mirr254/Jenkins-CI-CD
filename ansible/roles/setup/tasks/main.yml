@@ -1,0 +1,10 @@
+- name: install necessary packages
+  apt:
+    update_cache: yes
+    name: '{{ item }}'
+    state: present
+  with_items:
+    - awscli
+    - nginx
+    - python-pip
+    - jq

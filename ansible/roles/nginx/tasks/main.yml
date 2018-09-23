@@ -6,7 +6,7 @@
     state: started
 
 - name: Remove nginx default configuration
-  command: "rm -rf /etc/nginx/sites-available/default /etc/nginx/sites-enabled/default"
+  command: rm -rf /etc/nginx/sites-available/default /etc/nginx/sites-enabled/default
 
 - name: Add our own nginx configuration
   shell:
