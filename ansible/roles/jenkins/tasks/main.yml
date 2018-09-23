@@ -1,0 +1,15 @@
+# this role installs jenkins on the server
+#add jenkins installer to the list of sources for the packages
+
+- name: Install jenkins
+  shell: |
+    wget -q -O - https://pkg.jenkins.io/debian/jenkins-ci.org.key | sudo apt-key add -
+    echo deb https://pkg.jenkins.io/debian-stable binary/ | sudo tee /etc/apt/sources.list.d/jenkins.list
+    sudo apt-get update
+    sudo apt-get install -y jenkins
+
+#start jenkins service
+- name: Start Jenkins
+  shell: |
+    sudo systemctl start jenkins
+    sudo systemctl status jenkins

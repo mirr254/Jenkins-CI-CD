@@ -32,8 +32,8 @@
       },
       {
         "type": "file",
-        "source": "../k8s.sh",
-        "destination": "/home/ubuntu/k8s.sh"
+        "source": "../k8s-start-script.sh",
+        "destination": "/home/ubuntu/k8s-start-script.sh"
       },
       {
         "type": "file",
