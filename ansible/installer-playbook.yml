@@ -1,0 +1,22 @@
+- hosts: all
+  become: yes
+  become_method: sudo
+  remote_user: ubuntu
+
+  vars:
+    dir: /home/ubuntu/
+    app_dir: /home/ubuntu/micro-k8s
+    ansible_python_interpreter: '/usr/bin/python3'
+
+  roles: #these roles contains all the setup required to be done on the host
+    - setup
+    - nginx
+    - jenkins
+    - aws
+    - k8s
+    - docker
+
+  environment: #set this environment variables to the host so they can be used by aws role
+    AWS_SECRET_ACCESS_KEY: "{{ lookup('env', 'AWS_SECRET_ACCESS_KEY') }}"
+    AWS_ACCESS_KEY_ID: "{{ lookup('env', 'AWS_ACCESS_KEY_ID') }}"
+    AWS_REGION: "{{ lookup('env', 'AWS_REGION') }}"
