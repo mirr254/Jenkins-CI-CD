@@ -1,0 +1,18 @@
+- name: Create k8s service
+  shell:
+    chdir: /etc/systemd/system/
+    creates: k8s-start-script.service
+    cmd: |
+      cat > k8s-start-script.service <<EOF
+      [Unit]
+      Description=Start k8s-start-script service
+      After=network.target
+
+      [Service]
+      User=ubuntu
+      ExecStart=/bin/bash /home/ubuntu/k8s-start-script.sh
+      Restart=always
+
+      [Install]
+      WantedBy=multi-user.target
+      EOF
