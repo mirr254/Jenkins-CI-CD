@@ -7,9 +7,9 @@ echo "Generate public key from pem file"
 chmod 400 /home/ubuntu/kungu_admin.pem
 ssh-keygen -y -f /home/ubuntu/kungu_admin.pem > /home/ubuntu/.ssh/id_rsa.pub
 
-echo "Creating cluster..."
-kops create cluster --dns-zone shammir.tk --zones us-west-1a --master-size t2.micro --node-size t2.micro --name $CLUSTER_NAME --ssh-public-key /home/ubuntu/.ssh/id_rsa.pub --yes
-echo "************************ validate cluster **************************"
+echo "Create cluster..."
+kops create cluster --dns-zone shammir.tk --zones $ZONE --master-size t2.micro --node-size t2.micro --name $CLUSTER_NAME --ssh-public-key /home/ubuntu/.ssh/id_rsa.pub --yes
+echo " #### Check if cluster is valid ####"
 while true; do
   kops validate cluster --name $CLUSTER_NAME | grep 'is ready' &> /dev/null
   if [ $? == 0 ]; then
@@ -18,7 +18,7 @@ while true; do
     sleep 30
 done
 
-echo "<<<<<<<<<<<<< get the cluster >>>>>>>>>>>>>"
+echo "#### get the cluster info ######"
 kops get cluster
 kubectl cluster-info
 kubectl apply namespace ingress
