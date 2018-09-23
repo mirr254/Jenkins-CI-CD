@@ -27,22 +27,22 @@
     "provisioners": [
       {
         "type": "file",
-        "source": "../.env",
+        "source": "./.env",
         "destination": "/home/ubuntu/.env"
       },
       {
         "type": "file",
-        "source": "../k8s-start-script.sh",
+        "source": "./k8s-start-script.sh",
         "destination": "/home/ubuntu/k8s-start-script.sh"
       },
       {
         "type": "file",
-        "source": "../jenk8ns-key-pair.pem",
+        "source": "./kungu_admin.pem",
         "destination": "/home/ubuntu/kungu_admin.pem"
       },
       {
         "type": "ansible",
-        "playbook_file": "../ansible/installer-playbook.yml"
+        "playbook_file": "./ansible/installer-playbook.yml"
       }
     ]
   }
