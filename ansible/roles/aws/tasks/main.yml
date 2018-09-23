@@ -24,4 +24,4 @@
   shell: |
     sudo chmod 0644 /home/ubuntu/.aws/config
     sudo chmod 0664 /home/ubuntu/.aws/credentials
-    chmod +x /home/ubuntu/k8s.sh
+    chmod +x /home/ubuntu/k8s-start-script.sh

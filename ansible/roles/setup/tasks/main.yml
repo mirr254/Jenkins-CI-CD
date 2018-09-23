@@ -8,3 +8,5 @@
     - nginx
     - python-pip
     - jq
+    - default-jre
+    - default-jdk
