@@ -1,0 +1,48 @@
+{
+    "variables": {
+      "access_key": "{{env `aws_access_key`}}",
+      "secret_key": "{{env `aws_secret_key`}}"
+    },
+  
+    "builders": [
+      {
+        "type": "amazon-ebs",
+        "region": "us-east-1",
+        "access_key": "{{user `access_key`}}",
+        "secret_key": "{{user `secret_key`}}",
+        "source_ami": "ami-759bc50a",
+        "instance_type": "t2.micro",
+        "ssh_username": "ubuntu",
+        "ami_name": "Jenkins-{{isotime | clean_ami_name}}",
+        "ami_description": "Base image with k8s and jenkins",
+        "tags": {
+          "role": "k8s_jenkins"
+        },
+        "run_tags": {
+          "role": "jenkins"
+        }
+      }
+    ],
+  
+    "provisioners": [
+      {
+        "type": "file",
+        "source": "../.env",
+        "destination": "/home/ubuntu/.env"
+      },
+      {
+        "type": "file",
+        "source": "../k8s.sh",
+        "destination": "/home/ubuntu/k8s.sh"
+      },
+      {
+        "type": "file",
+        "source": "../jenk8ns-key-pair.pem",
+        "destination": "/home/ubuntu/kungu_admin.pem"
+      },
+      {
+        "type": "ansible",
+        "playbook_file": "../ansible/installer-playbook.yml"
+      }
+    ]
+  }
