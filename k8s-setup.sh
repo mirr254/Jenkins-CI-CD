@@ -91,7 +91,7 @@ fi
 
 echo "Creating cluster..."
 # creating a cluster
-kops create cluster --name $KOPS_CLUSTER_NAME --master-count 1 --master-size t2.micro --node-count 1 --node-size t2.micro --zones $ZONE --master-zones $ZONE --ssh-public-key kube-key.pub --yes
+kops create cluster --name $KOPS_CLUSTER_NAME --master-count 1 --master-size t2.micro --node-count 2 --node-size t2.micro --zones $ZONE --master-zones $ZONE --ssh-public-key kube-key.pub --yes
 
 while true; do
   kops validate cluster --name $KOPS_CLUSTER_NAME | grep 'is ready' &> /dev/null
