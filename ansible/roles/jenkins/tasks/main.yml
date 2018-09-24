@@ -1,6 +1,4 @@
-# this role installs jenkins on the server
-#add jenkins installer to the list of sources for the packages
-#run the commands below to add Jenkins repository to your system… First add the repository key
+---
 
 - name: Install packages and dependencies
   apt: name={{ item }} update_cache={{ update_apt_cache }} state=installed
@@ -22,20 +20,13 @@
 - name: Install Jenkins server
   apt: name=jenkins state=installed
 
-- name: start jenkins
-  systemd:
-    name: jenkins
-    state: started
+- include: install_docker.yml
 
-- name: enable jenkins
-  systemd:
-    name: jenkins
-    enabled: true
-- name: init password jenkin
-  shell: cat /var/lib/jenkins/secrets/initialAdminPassword
-  changed_when: false
-  register: result
-
-- name: print init password jenkins
-  debug:
-    var: result.stdout
+- name: Install additional Python packages
+  pip: name={{ item }} state=latest
+  with_items:
+    - ansible
+    - boto
+    - docker-compose
+    - flake8
+    - passlib
