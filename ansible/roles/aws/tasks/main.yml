@@ -1,0 +1,31 @@
+- name: Creates .aws/ directory
+  file:
+    path: .aws/
+    state: directory
+
+- name: Create config file
+  shell: |
+    chdir: /home/ubuntu/.aws
+    creates: config
+      cat > /home/ubuntu/.aws/config <<EOF
+    [default]
+    region=us-east-1
+
+- name: Create credentials file
+  environment: 
+      AWS_SECRET_ACCESS_KEY: "{{ lookup('env', 'AWS_SECRET_ACCESS_KEY') }}"
+      AWS_ACCESS_KEY_ID: "{{ lookup('env', 'AWS_ACCESS_KEY_ID') }}"
+      AWS_DEFAULT_REGION: us-east-1
+  shell: |
+    chdir: /home/ubuntu/.aws
+    creates: credentials
+      cat > /home/ubuntu/.aws/credentials <<EOF
+    [default]
+    aws_access_key_id=$AWS_ACCESS_KEY_ID
+    aws_secret_access_key=$AWS_SECRET_ACCESS_KEY
+
+- name: Change file permissions
+  shell: |
+    sudo chmod 0644 /home/ubuntu/.aws/config
+    sudo chmod 0664 /home/ubuntu/.aws/credentials
+    chmod +x /home/ubuntu/k8s-setup.sh
