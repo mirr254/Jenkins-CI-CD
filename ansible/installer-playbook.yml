@@ -13,10 +13,10 @@
     # - environment
     - setup
     - nginx
+    - jenkins-service
     - aws
     - k8s
     - docker
-    - jenkins-service
 
   environment: #set this environment variables to the host so they can be used by aws role
     AWS_SECRET_ACCESS_KEY: "{{ lookup('env', 'AWS_SECRET_ACCESS_KEY') }}"
