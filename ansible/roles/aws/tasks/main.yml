@@ -9,7 +9,7 @@
     creates: config
       cat > /home/ubuntu/.aws/config <<EOF
     [default]
-    region=$AWS_REGION
+    region=us-west-1
 
 - name: Create credentials file
   shell: |

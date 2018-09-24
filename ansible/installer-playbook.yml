@@ -7,8 +7,10 @@
     dir: /home/ubuntu/
     app_dir: /home/ubuntu/micro-k8s
     ansible_python_interpreter: '/usr/bin/python3'
+    update_apt_cache: yes
 
   roles: #these roles contains all the setup required to be done on the host
+    # - environment
     - setup
     - nginx
     - jenkins
@@ -19,4 +21,4 @@
   environment: #set this environment variables to the host so they can be used by aws role
     AWS_SECRET_ACCESS_KEY: "{{ lookup('env', 'AWS_SECRET_ACCESS_KEY') }}"
     AWS_ACCESS_KEY_ID: "{{ lookup('env', 'AWS_ACCESS_KEY_ID') }}"
-    AWS_REGION: "{{ lookup('env', 'AWS_REGION') }}"
+    AWS_REGION: us-west-1

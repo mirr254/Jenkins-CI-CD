@@ -1,22 +1,49 @@
-#!/bin/bash
+echo "Sourcing the env variables"
+source /home/ubuntu/.env
 
-set -o errexit #set -e  #exit immediately if a command  exits with non-zero status
-set -o xtrace #set -x #to trace what gets executed. Useful for debugging.
+sudo mkdir -p $HOME/.kube
+
+#Create an AWS S3 bucket for kops to persist its state
+echo "Get s3 bucket..."
+# Check available buckets
+buckets="$(aws s3api list-buckets | jq -r '.Buckets')"
+found_bucket=false
+
+# check if bucket already exists
+for name in $( echo ${buckets} | jq -c '.[]'); do
+	bucket_names=$(echo ${name} | jq -r '.Name')
+	the_bucket=$(echo ${bucket_names} | grep ${BUCKET_NAME})
+	if [[ ${the_bucket} == ${BUCKET_NAME} ]]; then
+	found_bucket=true
+	break
+	fi
+done
+
+if [ ${found_bucket} == false ]; then
+	echo "Create the bucket..."
+	export BUCKET_NAME=$BUCKET_NAME
+	aws s3api create-bucket --bucket $BUCKET_NAME --region $AWS_DEFAULT_REGION --create-bucket-configuration LocationConstraint=us-west-1
+	export KOPS_STATE_STORE=s3://$BUCKET_NAME
+fi
+#enable versioning for the above s3 bucket
+aws s3api put-bucket-versioning --bucket $BUCKET_NAME --versioning-configuration Status=Enabled
 
 echo "Generate public key from pem file"
-chmod 400 /home/ubuntu/kungu_admin.pem
-ssh-keygen -y -f /home/ubuntu/kungu_admin.pem > /home/ubuntu/.ssh/id_rsa.pub
+chmod 400 /home/ubuntu/aws-ssh.pem
+ssh-keygen -y -f /home/ubuntu/aws-ssh.pem > /home/ubuntu/.ssh/id_rsa.pub
 
 echo "Create cluster..."
-kops create cluster --dns-zone shammir.tk --zones $ZONE --master-size t2.micro --node-size t2.micro --name $CLUSTER_NAME --ssh-public-key /home/ubuntu/.ssh/id_rsa.pub --yes
-echo " #### Check if cluster is valid ####"
-while true; do
-  kops validate cluster --name $CLUSTER_NAME | grep 'is ready' &> /dev/null
-  if [ $? == 0 ]; then
-    break
-  fi
-    sleep 30
-done
+kops create cluster --dns-zone shammir.tk --zones $ZONE --master-size t2.micro --node-size t2.micro --name $KOPS_CLUSTER_NAME --ssh-public-key /home/ubuntu/.ssh/id_rsa.pub --yes
+
+#validate the cluster
+# echo "************************ validate cluster **************************"
+# while true; do
+#   kops validate cluster --name $KOPS_CLUSTER_NAME | grep 'is ready' &> /dev/null
+#   if [ $? == 0 ]; then
+#     break
+#   fi
+#     sleep 30
+# done
 
 echo "#### get the cluster info ######"
 kops get cluster
