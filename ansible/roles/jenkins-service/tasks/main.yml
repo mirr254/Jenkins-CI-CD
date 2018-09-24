@@ -1,16 +1,13 @@
-- name: Create start jenkins service
-  shell:
-    chdir: /etc/systemd/system/
-    creates: jenkins.service
-    cmd: |
-      cat > jenkins.service <<EOF
-      [Unit]
-      Description=Start jenkins service
-      After=network.target
-      [Service]
-      User=ubuntu
-      ExecStart=/bin/bash /home/ubuntu/jenkins.sh
-      Restart=always
-      [Install]
-      WantedBy=multi-user.target
-      EOF
+---
+###############install jenkins server app ######################
+
+- name: Install jenkins
+  shell: |
+    wget -q -O - https://pkg.jenkins.io/debian/jenkins-ci.org.key | sudo apt-key add -
+    echo deb https://pkg.jenkins.io/debian-stable binary/ | sudo tee /etc/apt/sources.list.d/jenkins.list
+    sudo apt-get update
+    sudo apt-get install -y jenkins
+- name: Start Jenkins
+  shell: |
+    sudo systemctl start jenkins
+    sudo systemctl status jenkins

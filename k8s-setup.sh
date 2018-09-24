@@ -1,98 +1,113 @@
-#!/usr/bin/env bash
+## AWS configure
 
-set -o errexit #set -e  #exit immediately if a command  exits with non-zero status
-set -o xtrace #set -x #to trace what gets executed. Useful for debugging.
+. .env
 
-# variavles from environment variables
+#update time
+sudo ntpdate ntp.ubuntu.com
+
+## AWS Idenity And Access Management
+## create user group
+echo "Get user group ${AWS_USER_GROUP}..."
+user_group="$(aws iam get-group --group-name $AWS_USER_GROUP | jq -r ".Group.GroupName")"
+if [ "${user_group}" != ${AWS_USER_GROUP} ]; then
+	echo "Create user group ${AWS_USER_GROUP}"
+	aws iam create-group --group-name ${AWS_USER_GROUP}
+	aws iam attach-group-policy --group-name ${AWS_USER_GROUP} --policy-arn arn:aws:iam::aws:policy/AmazonEC2FullAccess
+	aws iam attach-group-policy --group-name ${AWS_USER_GROUP} --policy-arn arn:aws:iam::aws:policy/AmazonS3FullAccess
+	aws iam attach-group-policy --group-name ${AWS_USER_GROUP} --policy-arn arn:aws:iam::aws:policy/AmazonVPCFullAccess
+	aws iam attach-group-policy --group-name ${AWS_USER_GROUP} --policy-arn arn:aws:iam::aws:policy/IAMFullAccess
+else
+	echo "Using existing group..."
+fi
+
+## create user
+echo "Get user ${AWS_USER}..."
+user="$(aws iam get-user --user-name $AWS_USER | jq -r ".User.UserName")"
+if [ "${user}" != "${AWS_USER}" ]; then
+	echo "Create user ${AWS_USER}..."
+	aws iam create-user --user-name ${AWS_USER}
+else
+	echo "Using existing user..."
+fi
+
+echo "Create AWS access key..."
+create_access_key(){
+	aws iam create-access-key --user-name ${AWS_USER} > kops-creds
+	cat kops-creds 
+}
+
+## kops Access Keys
+aws iam list-access-keys --user-name ${AWS_USER} > kops-creds
+access_keys="$(cat kops-creds | jq -r '.AccessKeyMetadata')"
+if [ "${access_keys}" == [] ]; then
+	create_access_key
+else
+	# delete existing access keys
+	for key in $(echo ${access_keys} | jq -c '.[]'); do
+		access_key=$(echo ${key} | jq -r '.AccessKeyId')
+		aws iam delete-access-key --user-name=${AWS_USER} --access-key-id=${access_key}
+	done
+	create_access_key
+fi
+
+delete_existing_key_pair(){
+	echo "Delete exising key pair..."
+	aws ec2 delete-key-pair --key-name ${AWS_KEY_NAME}
+}
+
+create_key_pair(){
+	delete_existing_key_pair
+	echo "Create new key pair..."
+	aws ec2 create-key-pair --key-name ${AWS_KEY_NAME} | jq -r '.KeyMaterial' > kube-key.pem
+	cat kube-key.pem
+	chmod 400 kube-key.pem
+	ssh-keygen -y -f kube-key.pem > kube-key.pub
+	cat kube-key.pub
+}
+
+create_key_pair
+
+echo "Get s3 bucket..."
+## creating cluster state storage
+buckets="$(aws s3api list-buckets | jq -r '.Buckets')"
 found_bucket=false
-CLUSTER_NAME=$KOPS_CLUSTER_NAME
-BUCKET_NAME=$BUCKET_NAME
-DNS_ZONE=$AWS_DEFAULT_REGION
+for name in $( echo ${buckets} | jq -c '.[]'); do
+        bucket_name=$(echo ${name} | jq -r '.Name')
+        if [ ${bucket_name} == ${BUCKET_NAME} ]; then 
+		found_bucket=true
+	fi
+done
 
-checkIfBucketExists() {
-    local buckets=$(aws s3api list-buckets --query "Buckets[].Name")
-    local bucket="${BUCKET_NAME}"
-    if [[ "${buckets[@]}" =~ "${bucket}" ]]; then
-        found_bucket=true
-        echo "found bucket ${bucket}"
-    else
-        echo "${bucket} not found"
-    fi
-}
+if [ ${found_bucket} == false ]; then
+	echo "Create s3 bucket..."
+	echo $BUCKET_NAME
+	aws s3api create-bucket --bucket $BUCKET_NAME 
+	echo "KOP_STATE"
+    echo $KOPS_STATE_STORE
+else
+	echo "Using existing s3 bucket..."
+fi
 
-# Creates the bucket if doesn't exist and/or sets 
-# the KOPS_STATE_STORE
-createBucket() {
-    checkIfBucketExists
-    if [ $(echo $found_bucket) == false ]; then
-        echo "Creating bucket ${BUCKET_NAME}"
-        aws s3 mb s3://$BUCKET_NAME
-    fi
-    export KOPS_STATE_STORE=s3://$BUCKET_NAME
-}
 
-#enable versioning for the above s3 bucket
-enableBucketVersioning() {
-    aws s3api put-bucket-versioning --bucket $BUCKET_NAME --versioning-configuration Status=Enabled
-}
+echo "Creating cluster..."
+# creating a cluster
+kops create cluster --name $KOPS_CLUSTER_NAME --master-count 1 --master-size t2.micro --node-count 1 --node-size t2.micro --zones $ZONE --master-zones $ZONE --ssh-public-key kube-key.pub --yes
 
-#create a public key to use when SSH'ng
-#use the pem file we copied earlier
-createPublicKey() {
-    echo "Generate public key from pem file"
-    chmod 400 /home/ubuntu/aws-ssh.pem
-    ssh-keygen -y -f /home/ubuntu/aws-ssh.pem > /home/ubuntu/.ssh/id_rsa.pub
-}
+while true; do
+  kops validate cluster --name $KOPS_CLUSTER_NAME | grep 'is ready' &> /dev/null
+  if [ $? == 0 ]; then
+     break
+  fi
+    sleep 30
+done
 
-createOrUpdateCluster() {
-    # Only create a new cluster if one does not exist
-    # else update existing cluster
-    #specify the locationConstraint to allow creation of clusters in other regions aprt from us-east-1
-    kops get clusters --name ${CLUSTER_NAME} > /dev/null 2>&1
-    if [ $? == 1 ]; then
-        echo "Creating cluster ${CLUSTER_NAME}"
-        kops create cluster --cloud aws --zones=us-east-2b \
-            --dns-zone ${DNS_ZONE} --master-size t2.micro \
-            --node-size t2.micro --name ${CLUSTER_NAME} \
-            --ssh-public-key /home/ubuntu/.ssh/${KEY_NAME}.pub \
-            --state s3://${BUCKET_NAME} --yes 
+kops get cluster
+kubectl cluster-info
 
-        while true; do
-            kops validate cluster --name $CLUSTER_NAME \
-              --state s3://${BUCKET_NAME} | grep 'is ready' > /dev/null 2>&1;
-            if [ $? == 0 ]; then
-                break
-            else
-                echo "cluster ${CLUSTER_NAME} is still provisioning"
-            fi
-            sleep 30
-        done
-    else
-        echo "Updating cluster ${CLUSTER_NAME}"
-        kops update cluster --name ${CLUSTER_NAME}
-    fi
-}
 
-configureJenkins() {
-    # Add jenkins to docker group
-    sudo usermod -a -G docker jenkins
-    sudo service jenkins restart
-
-    # Enable jenkins to access K8s cluster
-    sudo mkdir -p /var/lib/jenkins/.kube
-    sudo cp ~/.kube/config /var/lib/jenkins/.kube/
-    cd /var/lib/jenkins/.kube/
-    sudo chown jenkins:jenkins config
-    sudo chmod 750 config
-    cd $HOME
-}
-
-main() {
-    createBucket
-    enableBucketVersioning
-    createPublicKey
-    createOrUpdateCluster
-    configureJenkins
-}
-
-main "$@"
+#kops validate cluster
+sudo mkdir -p /var/lib/jenkins/.kube
+sudo cp ~/.kube/config /var/lib/jenkins/.kube/
+cd /var/lib/jenkins/.kube/
+sudo chown jenkins:jenkins config
+sudo chmod 750 config
