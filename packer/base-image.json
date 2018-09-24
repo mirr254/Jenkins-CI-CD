@@ -16,7 +16,8 @@
         "ami_name": "Jenkins-{{isotime | clean_ami_name}}",
         "ami_description": "Base image with k8s and jenkins",
         "tags": {
-          "role": "k8s_jenkins"
+          "role": "k8s_jenkins",
+          "Name": "ShammirAMI"
         },
         "run_tags": {
           "role": "jenkins"
@@ -27,18 +28,18 @@
     "provisioners": [
       {
         "type": "file",
+        "source": "./kungu_admin.pem",
+        "destination": "/home/ubuntu/aws-ssh.pem"
+      },
+      {
+        "type": "file",
         "source": "./.env",
         "destination": "/home/ubuntu/.env"
       },
       {
         "type": "file",
-        "source": "./k8s-start-script.sh",
-        "destination": "/home/ubuntu/k8s-start-script.sh"
-      },
-      {
-        "type": "file",
-        "source": "./kungu_admin.pem",
-        "destination": "/home/ubuntu/kungu_admin.pem"
+        "source": "./k8s-setup.sh",
+        "destination": "/home/ubuntu/k8s-setup.sh"
       },
       {
         "type": "ansible",

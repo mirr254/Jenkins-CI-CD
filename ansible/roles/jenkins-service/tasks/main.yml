@@ -1,6 +1,5 @@
-# this role installs jenkins on the server
-#add jenkins installer to the list of sources for the packages
-#run the commands below to add Jenkins repository to your system… First add the repository key
+---
+###############install jenkins server app ######################
 
 - name: Install jenkins
   shell: |
@@ -8,9 +7,12 @@
     echo deb https://pkg.jenkins.io/debian-stable binary/ | sudo tee /etc/apt/sources.list.d/jenkins.list
     sudo apt-get update
     sudo apt-get install -y jenkins
-
-#start jenkins service
 - name: Start Jenkins
   shell: |
     sudo systemctl start jenkins
     sudo systemctl status jenkins
+
+# - name: Ouput credentials for dashboard
+#   debug:
+#     msg: 
+#       - "Jenkins PASSWORD is >>> {{lookup('file', '/var/log/jenkins/jenkins.log') }}"

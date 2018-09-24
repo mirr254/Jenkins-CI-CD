@@ -1,0 +1,24 @@
+---
+################ supervisor service ######################
+
+- name: start the application and install everything on boot
+  shell: |
+    sudo apt-get install -y supervisor
+    sudo bash -c 'cat <<EOF> /etc/supervisor/conf.d/kubernetes.conf
+    [program:kubernetes]
+    command=sudo bash -c "/home/ubuntu/k8s-setup.sh"
+    directory=/home/ubuntu/
+    user=ubuntu
+    autostart=true
+    autorestart=unexpected
+    stdout_logfile=/home/ubuntu/react.log
+    stderr_logfile=/home/ubuntu/react.err.log
+    EOF'
+    sudo supervisorctl reread
+    sudo supervisorctl update
+    sudo supervisorctl start kubernetes
+    sudo mkdir /etc/systemd/system/nginx.service.d
+    printf "[Service]\nExecStartPost=/bin/sleep 0.1\n" > override.conf
+    sudo mv override.conf /etc/systemd/system/nginx.service.d/override.conf
+    sudo systemctl daemon-reload
+    sudo systemctl restart nginx 

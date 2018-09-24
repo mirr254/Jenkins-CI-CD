@@ -9,9 +9,13 @@
     creates: config
       cat > /home/ubuntu/.aws/config <<EOF
     [default]
-    region=$AWS_REGION
+    region=us-east-1
 
 - name: Create credentials file
+  environment: 
+      AWS_SECRET_ACCESS_KEY: "{{ lookup('env', 'AWS_SECRET_ACCESS_KEY') }}"
+      AWS_ACCESS_KEY_ID: "{{ lookup('env', 'AWS_ACCESS_KEY_ID') }}"
+      AWS_DEFAULT_REGION: us-east-1
   shell: |
     chdir: /home/ubuntu/.aws
     creates: credentials
@@ -24,4 +28,4 @@
   shell: |
     sudo chmod 0644 /home/ubuntu/.aws/config
     sudo chmod 0664 /home/ubuntu/.aws/credentials
-    chmod +x /home/ubuntu/k8s-start-script.sh
+    chmod +x /home/ubuntu/k8s-setup.sh

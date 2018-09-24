@@ -10,3 +10,5 @@
     - jq
     - default-jre
     - default-jdk
+    - git
+    - wget
