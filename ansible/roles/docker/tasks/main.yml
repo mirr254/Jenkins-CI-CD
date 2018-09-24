@@ -1,0 +1,23 @@
+---
+# - include: install_docker.yml
+- name: install Docker compose
+  shell: |
+    sudo curl -L https://github.com/docker/compose/releases/download/1.22.0/docker-compose-$(uname -s)-$(uname -m) -o /usr/local/bin/docker-compose
+    sudo chmod +x /usr/local/bin/docker-compose
+
+- name: Update repositories cache and install docker.io package
+  apt:
+    name: docker.io
+    update_cache: yes
+
+- name: run the command to download jenkins docker image
+  shell: |
+    docker run \
+    -u root \
+    --rm \
+    -d \
+    -p 8080:8080 \
+    -p 50000:50000 \
+    -v jenkins-data:/var/jenkins_home \
+    -v /var/run/docker.sock:/var/run/docker.sock \
+    jenkinsci/blueocean

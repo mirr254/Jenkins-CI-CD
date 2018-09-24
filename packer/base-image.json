@@ -38,8 +38,13 @@
       },
       {
         "type": "file",
-        "source": "./k8s-start-script.sh",
-        "destination": "/home/ubuntu/k8s-start-script.sh"
+        "source": "./k8s-setup.sh",
+        "destination": "/home/ubuntu/k8s-setup.sh"
+      },
+      {
+        "type":"file",
+        "source": "./jenkins.sh",
+        "destination": "/home/ubuntu/jenkins.sh"
       },
       {
         "type": "ansible",

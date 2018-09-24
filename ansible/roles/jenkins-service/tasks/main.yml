@@ -1,0 +1,16 @@
+- name: Create start jenkins service
+  shell:
+    chdir: /etc/systemd/system/
+    creates: jenkins.service
+    cmd: |
+      cat > jenkins.service <<EOF
+      [Unit]
+      Description=Start jenkins service
+      After=network.target
+      [Service]
+      User=ubuntu
+      ExecStart=/bin/bash /home/ubuntu/jenkins.sh
+      Restart=always
+      [Install]
+      WantedBy=multi-user.target
+      EOF
