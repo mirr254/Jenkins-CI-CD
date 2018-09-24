@@ -88,6 +88,9 @@ else
 	echo "Using existing s3 bucket..."
 fi
 
+#path to export configuration
+echo "Export kubconfig"
+kops export kubecfg --name $KOPS_CLUSTER_NAME --config=~$KUBECONFIG
 
 echo "Creating cluster..."
 # creating a cluster
@@ -107,7 +110,7 @@ kubectl cluster-info
 
 #kops validate cluster
 sudo mkdir -p /var/lib/jenkins/.kube
-sudo cp ~/.kube/config /var/lib/jenkins/.kube/
+sudo cp $KUBECONFIG /var/lib/jenkins/.kube/
 cd /var/lib/jenkins/.kube/
-sudo chown jenkins:jenkins config
-sudo chmod 750 config
+sudo chown jenkins:jenkins $KOPS_CLUSTER_NAME
+sudo chmod 750 $KOPS_CLUSTER_NAME
